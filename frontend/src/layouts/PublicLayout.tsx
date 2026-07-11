@@ -1,15 +1,19 @@
 import { Outlet } from "react-router-dom";
 
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import PageContainer from "@/components/PageContainer";
+
 export default function PublicLayout() {
-    return (
-        <div>
-            <header>Navbar</header>
+  return (
+    <>
+      <Navbar />
 
-            <main>
-                <Outlet />
-            </main>
+      <PageContainer>
+        <Outlet />
+      </PageContainer>
 
-            <footer>Footer</footer>
-        </div>
-    );
+      <Footer />
+    </>
+  );
 }
