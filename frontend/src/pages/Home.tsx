@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -11,7 +11,7 @@ export default function Home() {
         Compare gold loan offers from trusted financial institutions.
       </p>
 
-      <Button>Browse Offers</Button>
+      {/* <Button>Browse Offers</Button> */}
     </div>
   );
 }
