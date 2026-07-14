@@ -1,0 +1,42 @@
+name: CI Build Check
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+env:
+  DATABASE_URL: "file:./dev.db"
+
+jobs:
+  build:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # - name: Generate Prisma Client
+      #   run: pnpm --filter aurumlk-backend db:generate
+
+      # - name: Build Backend
+      #   run: pnpm --filter aurumlk-backend build
+
+      - name: Build Frontend
+        run: pnpm --filter aurumlk-frontend build
