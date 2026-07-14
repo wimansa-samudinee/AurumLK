@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  password       String
+  role           String         @default("CUSTOMER")
+  businessName   String?
+  licenseNumber  String?
+  approved       Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  offers         Offer[]        @relation("BusinessOffers")
+  inquiries      Inquiry[]      @relation("CustomerInquiries")
+  businessInquiries Inquiry[]   @relation("BusinessInquiries")
+}
+
+model Center {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  address     String
+  city        String
+  phone       String
+  website     String?
+  rating      Float    @default(4.5)
+  offers      Offer[]
+  branches    Branch[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Branch {
+  id           String   @id @default(cuid())
+  name         String
+  address      String
+  city         String
+  phone        String
+  openingHours String
+  center       Center   @relation(fields: [centerId], references: [id])
+  centerId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Offer {
+  id          String    @id @default(cuid())
+  title       String
+  type        String
+  rate        Float
+  maxAmount   Int
+  tenure      String
+  description String
+  active      Boolean   @default(true)
+  center      Center    @relation(fields: [centerId], references: [id])
+  centerId    String
+  business    User?     @relation("BusinessOffers", fields: [businessId], references: [id])
+  businessId  String?
+  inquiries   Inquiry[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Inquiry {
+  id          String   @id @default(cuid())
+  subject     String
+  message     String
+  status      String   @default("NEW")
+  customer    User     @relation("CustomerInquiries", fields: [customerId], references: [id])
+  customerId  String
+  business    User?    @relation("BusinessInquiries", fields: [businessId], references: [id])
+  businessId  String?
+  offer       Offer?   @relation(fields: [offerId], references: [id])
+  offerId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
