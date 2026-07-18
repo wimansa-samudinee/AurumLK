@@ -1,114 +1,160 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { User, UserRole } from "./types";
+import type { Inquiry, Offer, Branch, Center, User, UserRole } from "./types";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+const TOKEN_KEY = "aurumlk_token";
+
+export function getToken() {
+  return typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
 }
 
-const TOKEN_KEY = "aurum_token";
-const USERS_KEY = "aurum_users";
-
-// Helper helper to get users list from localStorage
-function getUsers(): User[] {
-  const usersJson = localStorage.getItem(USERS_KEY);
-  if (!usersJson) {
-    // Seed with a default admin user if empty
-    const defaultUsers: User[] = [
-      {
-        id: "admin-1",
-        name: "Admin User",
-        email: "admin@aurum.lk",
-        role: "ADMIN",
-      }
-    ];
-    localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-    return defaultUsers;
-  }
-  try {
-    return JSON.parse(usersJson);
-  } catch {
-    return [];
+export function setToken(token: string) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(TOKEN_KEY, token);
   }
 }
 
-// Helper to save users list
-function saveUsers(users: User[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+export function clearToken() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
-export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options.headers ?? {}) as Record<string, string>),
+  };
 
-export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-export async function fetchMe(): Promise<User> {
   const token = getToken();
-  if (!token) {
-    throw new Error("No token found");
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
-  
-  // The token is the user's email in this mock implementation
-  const users = getUsers();
-  const user = users.find(u => u.email === token);
-  if (!user) {
-    throw new Error("User not found");
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || response.statusText || "Request failed");
   }
-  return user;
+
+  return response.json();
 }
 
-export async function login(data: { email: string; password: string }): Promise<{ token: string; user: User }> {
-  // Simple mock network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const users = getUsers();
-  const user = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
-  if (!user) {
-    throw new Error("Invalid email or password");
-  }
-  
-  // In a real app, we would verify the password, here we accept any password
-  const token = user.email; // Use email as mock token
-  return { token, user };
-}
-
-export async function register(data: {
-  name: string;
+export interface AuthPayload {
   email: string;
   password: string;
+}
+
+export interface RegisterPayload extends AuthPayload {
+  name: string;
   role: UserRole;
   businessName?: string;
   licenseNumber?: string;
-}): Promise<{ token: string; user: User }> {
-  // Simple mock network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+}
 
-  const users = getUsers();
-  if (users.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
-    throw new Error("Email address already registered");
-  }
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
 
-  const newUser: User = {
-    id: `user-${Date.now()}`,
-    name: data.name,
-    email: data.email,
-    role: data.role,
-    businessName: data.businessName,
-    licenseNumber: data.licenseNumber,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+export async function login(payload: AuthPayload) {
+  return request<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 
-  users.push(newUser);
-  saveUsers(users);
+export async function register(payload: RegisterPayload) {
+  return request<AuthResponse>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 
-  const token = newUser.email; // Use email as mock token
-  return { token, user: newUser };
+export async function fetchMe() {
+  return request<User>("/api/auth/me");
+}
+
+export async function fetchOffers(query?: Record<string, string | number | boolean>) {
+  const params = query ? `?${new URLSearchParams(Object.entries(query).map(([key, value]) => [key, String(value)]))}` : "";
+  return request<Offer[]>(`/api/offers${params}`);
+}
+
+export async function fetchOffer(id: string) {
+  return request<Offer>(`/api/offers/${id}`);
+}
+
+export async function fetchCenters() {
+  return request<Center[]>("/api/centers");
+}
+
+export async function fetchCenter(id: string) {
+  return request<Center>(`/api/centers/${id}`);
+}
+
+export async function fetchBranch(id: string) {
+  return request<Branch>(`/api/branches/${id}`);
+}
+
+export async function fetchBranches() {
+  return request<Branch[]>("/api/branches");
+}
+
+export async function fetchInquiries(query?: Record<string, string | number>) {
+  const params = query ? `?${new URLSearchParams(Object.entries(query).map(([key, value]) => [key, String(value)]))}` : "";
+  return request<Inquiry[]>(`/api/inquiries${params}`);
+}
+
+export async function createInquiry(payload: { subject: string; message: string; offerId: string }) {
+  return request<Inquiry>("/api/inquiries", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateInquiry(id: string, payload: Partial<{ status: string; message: string }>) {
+  return request<Inquiry>(`/api/inquiries/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createOffer(payload: Partial<Offer>) {
+  return request<Offer>("/api/offers", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateOffer(id: string, payload: Partial<Offer>) {
+  return request<Offer>(`/api/offers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchUsers() {
+  return request<User[]>("/api/users");
+}
+
+export async function updateUser(id: string, payload: Partial<User>) {
+  return request<User>(`/api/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchBusinessApprovals() {
+  return request<User[]>("/api/admin/business-approvals");
+}
+
+export async function approveBusiness(id: string) {
+  return request<User>(`/api/admin/business-approvals/${id}/approve`, { method: "POST" });
+}
+
+export async function rejectBusiness(id: string) {
+  return request<{ message: string }>(`/api/admin/business-approvals/${id}/reject`, { method: "POST" });
 }
