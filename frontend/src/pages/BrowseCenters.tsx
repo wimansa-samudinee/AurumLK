@@ -1,74 +1,89 @@
-import { Link } from "react-router";
-import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { MapPin, Star, Building2, Filter } from "lucide-react";
+import * as api from "../lib/api";
 
 export default function BrowseCenters() {
   const [filterOpen, setFilterOpen] = useState(false);
+  const [rawCenters, setRawCenters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const centers = [
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [minRating, setMinRating] = useState(0.0);
+
+  const mockCenters = [
     {
-      id: 1,
+      id: "1",
       name: "Gold Star Finance",
       rating: 4.5,
       reviews: 128,
-      branches: 12,
+      branchesCount: 12,
       location: "Colombo",
-      offers: 8,
+      offersCount: 8,
       description: "Trusted gold loan provider with 15+ years of experience",
     },
     {
-      id: 2,
+      id: "2",
       name: "Lanka Pawning Services",
       rating: 4.3,
       reviews: 95,
-      branches: 8,
+      branchesCount: 8,
       location: "Kandy",
-      offers: 5,
+      offersCount: 5,
       description: "Quick and reliable pawning services across Sri Lanka",
     },
     {
-      id: 3,
+      id: "3",
       name: "City Gold Loans",
       rating: 4.7,
       reviews: 156,
-      branches: 15,
+      branchesCount: 15,
       location: "Galle",
-      offers: 10,
+      offersCount: 10,
       description: "Premium gold loan services with competitive rates",
     },
-    {
-      id: 4,
-      name: "Royal Pawning",
-      rating: 4.6,
-      reviews: 142,
-      branches: 10,
-      location: "Colombo",
-      offers: 12,
-      description: "Established pawning center with excellent customer service",
-    },
-    {
-      id: 5,
-      name: "Diamond Finance",
-      rating: 4.4,
-      reviews: 87,
-      branches: 6,
-      location: "Negombo",
-      offers: 6,
-      description: "Fast approval and flexible repayment options",
-    },
-    {
-      id: 6,
-      name: "Sunrise Loans",
-      rating: 4.2,
-      reviews: 73,
-      branches: 5,
-      location: "Matara",
-      offers: 4,
-      description: "Your trusted partner for gold loan solutions",
-    },
   ];
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const fetched = await api.fetchCenters();
+        setRawCenters(fetched);
+      } catch (err) {
+        console.error("Failed to load centers:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const locations = Array.from(
+    new Set(rawCenters.map(c => c.city).filter(Boolean))
+  );
+
+  const displayCenters = rawCenters.length > 0
+    ? rawCenters.map(c => ({
+        id: c.id,
+        name: c.name,
+        rating: c.rating || 4.5,
+        reviews: 120, // Static review count fallback
+        branchesCount: c.branches?.length || 0,
+        location: c.city,
+        offersCount: c.offers?.length || 0,
+        description: c.description || "Verified pawning provider on AurumLK.",
+      }))
+    : mockCenters;
+
+  const filteredCenters = displayCenters.filter(center => {
+    const searchMatch = !searchTerm || center.name.toLowerCase().includes(searchTerm.toLowerCase()) || center.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const locationMatch = !selectedLocation || center.location.toLowerCase() === selectedLocation.toLowerCase();
+    const ratingMatch = center.rating >= minRating;
+    return searchMatch && locationMatch && ratingMatch;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -93,54 +108,65 @@ export default function BrowseCenters() {
 
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-2">
-                        Location
-                      </label>
-                      <select className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-                        <option>All Locations</option>
-                        <option>Colombo</option>
-                        <option>Kandy</option>
-                        <option>Galle</option>
-                        <option>Negombo</option>
-                        <option>Matara</option>
+                      <label className="block text-sm font-medium text-muted-foreground mb-2">Search</label>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search centers..."
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-muted-foreground mb-2">Location</label>
+                      <select
+                        value={selectedLocation}
+                        onChange={(e) => setSelectedLocation(e.target.value)}
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">All Locations</option>
+                        {locations.map((loc: any) => (
+                          <option key={loc} value={loc}>{loc}</option>
+                        ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-2">
-                        Minimum Rating
-                      </label>
-                      <select className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-                        <option>All Ratings</option>
-                        <option>4.5+ ⭐</option>
-                        <option>4.0+ ⭐</option>
-                        <option>3.5+ ⭐</option>
+                      <label className="block text-sm font-medium text-muted-foreground mb-2">Minimum Rating</label>
+                      <select
+                        value={minRating}
+                        onChange={(e) => setMinRating(Number(e.target.value))}
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value={0}>All Ratings</option>
+                        <option value={4.5}>4.5+ ⭐</option>
+                        <option value={4.0}>4.0+ ⭐</option>
+                        <option value={3.5}>3.5+ ⭐</option>
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-2">
-                        Number of Branches
-                      </label>
-                      <select className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-                        <option>Any</option>
-                        <option>10+ branches</option>
-                        <option>5+ branches</option>
-                      </select>
-                    </div>
-
-                    <button className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-                      Apply Filters
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedLocation("");
+                        setMinRating(0);
+                      }}
+                      className="w-full px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-orange-50 hover:text-primary transition-all font-semibold cursor-pointer"
+                    >
+                      Clear Filters
                     </button>
                   </div>
                 </div>
               </aside>
 
               <div className="flex-1">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="text-muted-foreground">Showing {centers.length} centers</div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                  <div className="text-muted-foreground">
+                    {loading ? "Loading centers..." : `Showing ${filteredCenters.length} centers`}
+                  </div>
                   <button
-                    className="lg:hidden flex items-center space-x-2 px-4 py-2 border border-border rounded-lg hover:bg-card/80 text-muted-foreground"
+                    className="lg:hidden flex items-center space-x-2 px-4 py-2 border border-border rounded-lg hover:bg-card/80 text-muted-foreground cursor-pointer"
                     onClick={() => setFilterOpen(!filterOpen)}
                   >
                     <Filter className="w-4 h-4" />
@@ -148,53 +174,54 @@ export default function BrowseCenters() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {centers.map((center) => (
-                    <div key={center.id} className="bg-card rounded-3xl shadow-sm border border-border p-6 hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <Building2 className="w-6 h-6 text-primary" />
-                          </div>
+                {loading ? (
+                  <div className="py-12 text-center text-muted-foreground font-semibold">Loading centers...</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {filteredCenters.map((center) => (
+                      <div key={center.id} className="bg-card rounded-3xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="text-xl font-semibold text-foreground">{center.name}</h3>
-                            <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                            <h3 className="text-xl font-bold text-foreground mb-1">{center.name}</h3>
+                            <div className="flex items-center text-sm text-muted-foreground space-x-1">
                               <MapPin className="w-4 h-4" />
-                              <span>{center.location}</span>
+                              <span>{center.location || "Sri Lanka"}</span>
                             </div>
                           </div>
-                        </div>
-                      </div>
-
-                      <p className="text-muted-foreground text-sm mb-4">{center.description}</p>
-
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="text-center p-2 bg-card/80 rounded">
-                          <div className="flex items-center justify-center space-x-1 mb-1">
-                            <Star className="w-4 h-4 text-primary" />
-                            <span className="font-semibold text-foreground">{center.rating}</span>
+                          <div className="flex items-center space-x-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg text-sm font-semibold">
+                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                            <span>{center.rating}</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">{center.reviews} reviews</div>
                         </div>
-                        <div className="text-center p-2 bg-card/80 rounded">
-                          <div className="font-semibold text-foreground mb-1">{center.branches}</div>
-                          <div className="text-xs text-muted-foreground">Branches</div>
-                        </div>
-                        <div className="text-center p-2 bg-card/80 rounded">
-                          <div className="font-semibold text-foreground mb-1">{center.offers}</div>
-                          <div className="text-xs text-muted-foreground">Offers</div>
-                        </div>
-                      </div>
 
-                      <Link
-                        to={`/centers/${center.id}`}
-                        className="block w-full text-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                      >
-                        View Details
-                      </Link>
-                    </div>
-                  ))}
-                </div>
+                        <p className="text-muted-foreground text-sm mb-6 line-clamp-2">{center.description}</p>
+
+                        <div className="grid grid-cols-2 gap-4 border-t pt-4 text-sm text-muted-foreground mb-6">
+                          <div className="flex items-center space-x-2">
+                            <Building2 className="w-4 h-4 text-primary" />
+                            <span>{center.branchesCount} Branches</span>
+                          </div>
+                          <div>
+                            <strong className="text-foreground">{center.offersCount}</strong> Active Offers
+                          </div>
+                        </div>
+
+                        <Link
+                          to={`/centers/${center.id}`}
+                          className="block text-center w-full py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors shadow-md"
+                        >
+                          View Center & Branches
+                        </Link>
+                      </div>
+                    ))}
+
+                    {filteredCenters.length === 0 && (
+                      <div className="col-span-2 py-12 text-center bg-card border border-border text-muted-foreground rounded-3xl">
+                        No pawning centers match your search parameters.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -205,4 +232,3 @@ export default function BrowseCenters() {
     </div>
   );
 }
-
