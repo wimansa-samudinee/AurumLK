@@ -117,4 +117,24 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   return res.json(offer);
 });
 
+router.delete("/:id", authenticateToken, async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  const existing = await prisma.offer.findUnique({ where: { id } });
+  if (!existing) {
+    return res.status(404).json({ error: "Offer not found." });
+  }
+
+  if (req.userRole === "BUSINESS" && existing.businessId !== req.userId) {
+    return res.status(403).json({ error: "Business may only delete its own offers." });
+  }
+
+  if (req.userRole !== "BUSINESS" && req.userRole !== "ADMIN") {
+    return res.status(403).json({ error: "Only businesses or admins can delete offers." });
+  }
+
+  await prisma.offer.delete({ where: { id } });
+  return res.json({ message: "Offer deleted successfully." });
+});
+
 export default router;

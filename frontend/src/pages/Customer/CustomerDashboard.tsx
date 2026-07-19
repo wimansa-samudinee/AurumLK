@@ -1,31 +1,67 @@
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import DashboardSidebar from "../../components/DashboardSidebar";
 import { Heart, MessageSquare, TrendingUp, Clock, ArrowRight, Star } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import * as api from "../../lib/api";
 
 export default function CustomerDashboard() {
-  const savedOffers = [
-    { id: 1, center: "Gold Star Finance", rate: "1.2%", location: "Colombo", rating: 4.5 },
-    { id: 2, center: "City Gold Loans", rate: "1.8%", location: "Galle", rating: 4.7 },
-  ];
+  const { user } = useAuth();
+  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [savedOffers, setSavedOffers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const recentComparisons = [
-    { id: 1, date: "2026-05-28", offers: 3 },
-    { id: 2, date: "2026-05-25", offers: 2 },
-  ];
+  // Favorites & Compare from LocalStorage
+  const [favoriteIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("aurumlk_favorites");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  const inquiries = [
-    { id: 1, center: "Gold Star Finance", status: "Pending", date: "2026-05-29" },
-    { id: 2, center: "Royal Pawning", status: "Replied", date: "2026-05-27" },
-  ];
+  const [compareIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("aurumlk_compare");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    async function load() {
+      try {
+        // Fetch inquiries
+        const fetchedInquiries = await api.fetchInquiries();
+        setInquiries(fetchedInquiries);
+
+        // Fetch favorites detailed info
+        if (favoriteIds.length > 0) {
+          const fetchedOffers = await api.fetchOffers({ active: true });
+          const filtered = fetchedOffers.filter((o: any) => favoriteIds.includes(o.id));
+          setSavedOffers(filtered.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to load customer stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [favoriteIds]);
+
+  const pendingReplies = inquiries.filter(i => i.status === "NEW").length;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 text-foreground">
       <DashboardSidebar role="customer" />
 
       <main className="flex-1">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back, John!</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back, {user?.name || "Customer"}!</h1>
             <p className="text-gray-600">Here's what's happening with your account</p>
           </div>
 
@@ -36,7 +72,7 @@ export default function CustomerDashboard() {
                   <Heart className="w-6 h-6 text-red-600" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{savedOffers.length}</div>
+              <div className="text-2xl font-bold text-gray-900 mb-1">{favoriteIds.length}</div>
               <div className="text-sm text-gray-600">Saved Offers</div>
             </div>
 
@@ -46,8 +82,8 @@ export default function CustomerDashboard() {
                   <TrendingUp className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{recentComparisons.length}</div>
-              <div className="text-sm text-gray-600">Recent Comparisons</div>
+              <div className="text-2xl font-bold text-gray-900 mb-1">{compareIds.length}</div>
+              <div className="text-sm text-gray-600">Offers in Compare</div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -66,69 +102,85 @@ export default function CustomerDashboard() {
                   <Clock className="w-6 h-6 text-amber-600" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">1</div>
+              <div className="text-2xl font-bold text-gray-900 mb-1">{pendingReplies}</div>
               <div className="text-sm text-gray-600">Pending Replies</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Saved Offers Panel */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Saved Offers</h2>
-                <Link to="/customer/favorites" className="text-amber-600 hover:text-amber-700 text-sm flex items-center space-x-1">
+                <Link to="/customer/favorites" className="text-amber-600 hover:text-amber-700 text-sm flex items-center space-x-1 font-semibold">
                   <span>View All</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
-              <div className="space-y-4">
-                {savedOffers.map((offer) => (
-                  <div key={offer.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{offer.center}</h3>
-                      <div className="flex items-center space-x-3 mt-1">
-                        <span className="text-sm text-gray-600">{offer.location}</span>
-                        <span className="text-sm flex items-center space-x-1">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          <span>{offer.rating}</span>
-                        </span>
+              {loading ? (
+                <p className="text-sm text-gray-500">Loading...</p>
+              ) : savedOffers.length > 0 ? (
+                <div className="space-y-4">
+                  {savedOffers.map((offer) => (
+                    <div key={offer.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{offer.title}</h3>
+                        <div className="flex items-center space-x-3 mt-1">
+                          <span className="text-sm text-gray-600">{offer.center?.name}</span>
+                          <span className="text-sm flex items-center space-x-1">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <span>{offer.center?.rating || 4.5}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-amber-600">{offer.rate}%</div>
+                        <div className="text-xs text-gray-600">per month</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-amber-600">{offer.rate}</div>
-                      <div className="text-xs text-gray-600">per month</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-sm text-gray-500">No saved offers yet.</div>
+              )}
             </div>
 
+            {/* Inquiries Panel */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Recent Inquiries</h2>
-                <Link to="/customer/inquiries" className="text-amber-600 hover:text-amber-700 text-sm flex items-center space-x-1">
+                <Link to="/customer/inquiries" className="text-amber-600 hover:text-amber-700 text-sm flex items-center space-x-1 font-semibold">
                   <span>View All</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
-              <div className="space-y-4">
-                {inquiries.map((inquiry) => (
-                  <div key={inquiry.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{inquiry.center}</h3>
-                      <div className="text-sm text-gray-600 mt-1">{inquiry.date}</div>
+              {loading ? (
+                <p className="text-sm text-gray-500">Loading...</p>
+              ) : inquiries.length > 0 ? (
+                <div className="space-y-4">
+                  {inquiries.slice(0, 3).map((inquiry) => (
+                    <div key={inquiry.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{inquiry.subject}</h3>
+                        <div className="text-sm text-gray-600 mt-1">{inquiry.business?.businessName || "Gold Loan Center"}</div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          inquiry.status === "ANSWERED"
+                            ? "bg-green-100 text-green-700"
+                            : inquiry.status === "NEW"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {inquiry.status === "NEW" ? "Pending" : inquiry.status}
+                      </span>
                     </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        inquiry.status === "Replied"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {inquiry.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-sm text-gray-500">No inquiries submitted yet.</div>
+              )}
             </div>
           </div>
 

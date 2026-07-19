@@ -1,31 +1,58 @@
-import { Link } from "react-router";
+import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { MapPin, Phone, Mail, Clock, Star, Building2, Award } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Star, Building2, Award, Calendar, ArrowRight } from "lucide-react";
+import * as api from "../lib/api";
 
 export default function CenterDetails() {
-  const center = {
-    id: 1,
-    name: "Gold Star Finance",
-    rating: 4.5,
-    reviews: 128,
-    location: "Colombo",
-    phone: "+94 11 234 5678",
-    email: "info@goldstar.lk",
-    description: "Gold Star Finance has been serving customers across Sri Lanka for over 15 years, providing reliable and transparent gold loan services. We pride ourselves on offering competitive rates and exceptional customer service.",
-    established: "2009",
-    license: "CB/PL/2009/123",
-    branches: [
-      { id: 1, name: "Main Branch", location: "Colombo 03", phone: "+94 11 234 5678" },
-      { id: 2, name: "Kandy Branch", location: "Kandy", phone: "+94 81 234 5678" },
-      { id: 3, name: "Galle Branch", location: "Galle", phone: "+94 91 234 5678" },
-    ],
-    offers: [
-      { id: 1, type: "Regular", rate: "1.2%", tenure: "12 months" },
-      { id: 2, type: "Express", rate: "1.5%", tenure: "6 months" },
-      { id: 3, type: "Premium", rate: "1.0%", tenure: "18 months" },
-    ],
-  };
+  const { id } = useParams<{ id: string }>();
+  const [center, setCenter] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      if (!id) return;
+      try {
+        const fetched = await api.fetchCenter(id);
+        setCenter(fetched);
+      } catch (err) {
+        console.error("Failed to load center details:", err);
+        setError("Center not found.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center bg-gray-50">
+          <p className="text-gray-500 font-semibold">Loading center details...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !center) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Center Not Found</h2>
+            <Link to="/centers" className="text-amber-600 hover:underline">Back to browse centers</Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -35,11 +62,11 @@ export default function CenterDetails() {
         <section className="bg-gradient-to-br from-amber-50 to-orange-50 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-              <Link to="/" className="hover:text-amber-600">Home</Link>
+              <Link to="/" className="hover:text-amber-600 font-semibold">Home</Link>
               <span>/</span>
-              <Link to="/centers" className="hover:text-amber-600">Centers</Link>
+              <Link to="/centers" className="hover:text-amber-600 font-semibold">Centers</Link>
               <span>/</span>
-              <span className="text-gray-900">{center.name}</span>
+              <span className="text-gray-900 font-semibold">{center.name}</span>
             </div>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex items-center space-x-4">
@@ -51,12 +78,11 @@ export default function CenterDetails() {
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-1">
                       <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                      <span className="font-semibold">{center.rating}</span>
-                      <span className="text-gray-600">({center.reviews} reviews)</span>
+                      <span className="font-semibold">{center.rating || 4.5}</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-600">
                       <MapPin className="w-4 h-4" />
-                      <span>{center.location}</span>
+                      <span>{center.city}</span>
                     </div>
                   </div>
                 </div>
@@ -71,145 +97,81 @@ export default function CenterDetails() {
               <div className="lg:col-span-2 space-y-6">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-                  <p className="text-gray-600 mb-4">{center.description}</p>
-                  <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="flex items-center space-x-3">
-                      <Award className="w-5 h-5 text-amber-600" />
-                      <div>
-                        <div className="text-sm text-gray-600">Established</div>
-                        <div className="font-semibold">{center.established}</div>
-                      </div>
+                  <p className="text-gray-600 mb-4">
+                    {center.description || "No description provided for this center."}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t text-sm text-gray-600">
+                    <div className="flex items-center space-x-2">
+                      <Phone className="w-4 h-4 text-amber-600" />
+                      <span>{center.phone}</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Building2 className="w-5 h-5 text-amber-600" />
-                      <div>
-                        <div className="text-sm text-gray-600">License No.</div>
-                        <div className="font-semibold">{center.license}</div>
-                      </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-amber-600" />
+                      <span>{center.address}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Available Offers</h2>
-                  <div className="space-y-3">
-                    {center.offers.map((offer) => (
-                      <div key={offer.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">Gold Loan Offers</h2>
+                  <div className="space-y-4">
+                    {center.offers?.map((offer: any) => (
+                      <div key={offer.id} className="border p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                         <div>
-                          <div className="font-semibold text-gray-900">{offer.type} Loan</div>
-                          <div className="text-sm text-gray-600">Tenure: {offer.tenure}</div>
+                          <h3 className="text-lg font-bold text-gray-900">{offer.title}</h3>
+                          <div className="flex gap-2 text-xs mt-1">
+                            <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-semibold">{offer.type}</span>
+                            <span className="text-gray-500">Tenure: {offer.tenure}</span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-amber-600">{offer.rate}</div>
-                          <div className="text-sm text-gray-600">per month</div>
+                        <div className="flex items-center justify-between sm:justify-end gap-6">
+                          <div>
+                            <div className="text-xs text-gray-500">Interest Rate</div>
+                            <div className="text-lg font-bold text-amber-600">{offer.rate}%/mo</div>
+                          </div>
+                          <Link
+                            to={`/offers/${offer.id}`}
+                            className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-semibold"
+                          >
+                            View Details
+                          </Link>
                         </div>
-                        <Link
-                          to={`/offers/${offer.id}`}
-                          className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-                        >
-                          View Details
-                        </Link>
                       </div>
                     ))}
+                    {(!center.offers || center.offers.length === 0) && (
+                      <p className="text-gray-500 text-sm">No active loan offers at this center.</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Branch Locations</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">Branches</h2>
                   <div className="space-y-4">
-                    {center.branches.map((branch) => (
-                      <div key={branch.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{branch.name}</h3>
-                          <div className="flex items-center space-x-1 text-sm text-gray-600 mt-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{branch.location}</span>
-                          </div>
-                          <div className="flex items-center space-x-1 text-sm text-gray-600 mt-1">
-                            <Phone className="w-4 h-4" />
-                            <span>{branch.phone}</span>
-                          </div>
-                        </div>
-                        <Link
-                          to={`/branches/${branch.id}`}
-                          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          View Details
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Customer Reviews</h2>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((review) => (
-                      <div key={review} className="border-b pb-4 last:border-b-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                            <div>
-                              <div className="font-semibold">Customer Name</div>
-                              <div className="text-sm text-gray-600">2 weeks ago</div>
+                    {center.branches?.map((branch: any) => (
+                      <div key={branch.id} className="border-b last:border-b-0 pb-4 last:pb-0">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-gray-950 text-base">{branch.name}</h3>
+                            <div className="text-sm text-gray-500 mt-1 flex items-center space-x-1">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span>{branch.address}, {branch.city}</span>
                             </div>
+                            <div className="text-xs text-gray-500 mt-0.5">Hours: {branch.openingHours}</div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                            <span className="font-semibold">4.5</span>
-                          </div>
+                          <Link
+                            to={`/branches/${branch.id}`}
+                            className="text-amber-600 hover:text-amber-700 text-sm font-semibold flex items-center space-x-1"
+                          >
+                            <span>Branch Info</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </Link>
                         </div>
-                        <p className="text-gray-600">
-                          Excellent service and very professional staff. The loan process was smooth and quick.
-                        </p>
                       </div>
                     ))}
+                    {(!center.branches || center.branches.length === 0) && (
+                      <p className="text-gray-500 text-sm">No branches configured for this center.</p>
+                    )}
                   </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8 space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <Phone className="w-5 h-5 text-amber-600 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-600 mb-1">Phone</div>
-                        <div className="font-medium">{center.phone}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <Mail className="w-5 h-5 text-amber-600 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-600 mb-1">Email</div>
-                        <div className="font-medium">{center.email}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <MapPin className="w-5 h-5 text-amber-600 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-600 mb-1">Location</div>
-                        <div className="font-medium">{center.location}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <Clock className="w-5 h-5 text-amber-600 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-600 mb-1">Business Hours</div>
-                        <div className="font-medium">Mon-Fri: 9AM-6PM</div>
-                        <div className="font-medium">Sat: 9AM-1PM</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button className="w-full px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold mt-6">
-                    Send Inquiry
-                  </button>
                 </div>
               </div>
             </div>
@@ -221,4 +183,3 @@ export default function CenterDetails() {
     </div>
   );
 }
-

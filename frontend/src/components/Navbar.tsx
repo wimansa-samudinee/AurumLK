@@ -116,14 +116,42 @@ export default function Navbar() {
                 {label}
               </Link>
             ))}
-            <Link
-              to="/login"
-              className="block text-center px-4 py-3 text-white rounded-xl font-semibold mt-2 shadow-md"
-              style={{ background: "linear-gradient(135deg, #f15a14 0%, #f7a414 55%, #f7c31a 100%)" }}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Login
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  to={
+                    user.role === "ADMIN"
+                      ? "/admin/dashboard"
+                      : user.role === "BUSINESS"
+                      ? "/business/dashboard"
+                      : "/customer/dashboard"
+                  }
+                  className="block text-center px-4 py-3 text-white rounded-xl font-semibold mt-2 shadow-md animate-fade-in"
+                  style={{ background: "linear-gradient(135deg, #f15a14 0%, #f7a414 55%, #f7c31a 100%)" }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-center px-4 py-3 border border-border text-muted-foreground rounded-xl font-semibold mt-2 hover:border-primary hover:text-primary transition-all bg-white"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="block text-center px-4 py-3 text-white rounded-xl font-semibold mt-2 shadow-md"
+                style={{ background: "linear-gradient(135deg, #f15a14 0%, #f7a414 55%, #f7c31a 100%)" }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Login
+              </Link>
+            )}
           </div>
         )}
       </div>

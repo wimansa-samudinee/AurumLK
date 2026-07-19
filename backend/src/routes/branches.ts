@@ -74,4 +74,20 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   return res.json(branch);
 });
 
+router.delete("/:id", authenticateToken, async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  if (req.userRole !== "BUSINESS" && req.userRole !== "ADMIN") {
+    return res.status(403).json({ error: "Only businesses or admins can delete branches." });
+  }
+
+  const existing = await prisma.branch.findUnique({ where: { id } });
+  if (!existing) {
+    return res.status(404).json({ error: "Branch not found." });
+  }
+
+  await prisma.branch.delete({ where: { id } });
+  return res.json({ message: "Branch deleted successfully." });
+});
+
 export default router;

@@ -1,12 +1,18 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
 import { Search, TrendingUp, Shield, Clock, ArrowRight } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import * as api from "../lib/api";
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [offers, setOffers] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const featuredOffers = [
     {
-      id: 1,
+      id: "1",
       center: "Gold Star Finance",
       rate: "1.2%",
       maxAmount: "10,000,000",
@@ -14,7 +20,7 @@ export default function Home() {
       rating: 4.5,
     },
     {
-      id: 2,
+      id: "2",
       center: "Lanka Pawning Services",
       rate: "1.5%",
       maxAmount: "5,000,000",
@@ -22,7 +28,7 @@ export default function Home() {
       rating: 4.3,
     },
     {
-      id: 3,
+      id: "3",
       center: "City Gold Loans",
       rate: "1.8%",
       maxAmount: "8,000,000",
@@ -30,6 +36,39 @@ export default function Home() {
       rating: 4.7,
     },
   ];
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const fetched = await api.fetchOffers({ active: true });
+        if (fetched && fetched.length > 0) {
+          setOffers(fetched.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to load featured offers:", err);
+      }
+    }
+    load();
+  }, []);
+
+  const displayOffers = offers.length > 0
+    ? offers.map((o: any) => ({
+        id: o.id,
+        center: o.center?.name || "Gold Loan Center",
+        rate: `${o.rate}%`,
+        maxAmount: o.maxAmount.toLocaleString(),
+        tenure: o.tenure,
+        rating: o.center?.rating || 4.5,
+      }))
+    : featuredOffers;
+
+  const handleSearchSubmit = () => {
+    if (searchTerm.trim()) {
+      navigate(`/offers?search=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      navigate("/offers");
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -54,18 +93,23 @@ export default function Home() {
                 <div className="flex-1 relative">
                   <input
                     type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSearchSubmit();
+                    }}
                     placeholder="Search for offers or centers..."
                     className="w-full px-6 py-4 bg-card border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   />
-                  <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                  <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 cursor-pointer" onClick={handleSearchSubmit} />
                 </div>
-                <Link
-                  to="/offers"
-                  className="px-8 py-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all inline-flex items-center justify-center space-x-2 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                <button
+                  onClick={handleSearchSubmit}
+                  className="px-8 py-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all inline-flex items-center justify-center space-x-2 font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
                 >
                   <span>Browse Offers</span>
                   <ArrowRight className="w-5 h-5" />
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -117,7 +161,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredOffers.map((offer) => (
+              {displayOffers.map((offer) => (
                 <div key={offer.id} className="bg-card border border-border rounded-xl p-6 hover:border-primary/30 transition-all hover:-translate-y-1 shadow-lg">
                   <h3 className="text-xl font-semibold text-foreground mb-4">{offer.center}</h3>
                   <div className="space-y-3">

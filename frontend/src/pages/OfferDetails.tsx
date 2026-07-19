@@ -1,32 +1,143 @@
-import { Link } from "react-router";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { Heart, MapPin, Clock, DollarSign, Calendar, Shield, ArrowRight, Star } from "lucide-react";
+import { Heart, MapPin, Clock, DollarSign, Calendar, Shield, ArrowRight, Star, MessageSquare } from "lucide-react";
+import * as api from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function OfferDetails() {
-  const offer = {
-    id: 1,
-    center: "Gold Star Finance",
-    rate: "1.2%",
-    maxAmount: "10,000,000",
-    minAmount: "10,000",
-    tenure: "12 months",
-    rating: 4.5,
-    reviews: 128,
-    location: "Colombo",
-    type: "Regular",
-    processingTime: "Same Day",
-    goldPurity: "18K - 24K",
-    renewalOption: "Yes",
-    features: [
-      "No hidden charges",
-      "Flexible repayment",
-      "Quick approval",
-      "Competitive rates",
-      "Secure storage",
-      "Insurance coverage",
-    ],
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [offer, setOffer] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Inquiry Form States
+  const [inquiryOpen, setInquiryOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [inquiryLoading, setInquiryLoading] = useState(false);
+  const [inquirySuccess, setInquirySuccess] = useState(false);
+  const [inquiryError, setInquiryError] = useState("");
+
+  // Favorites & Compare from LocalStorage
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("aurumlk_favorites");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [compareList, setCompareList] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("aurumlk_compare");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("aurumlk_favorites", JSON.stringify(favorites));
+  }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem("aurumlk_compare", JSON.stringify(compareList));
+  }, [compareList]);
+
+  useEffect(() => {
+    async function load() {
+      if (!id) return;
+      try {
+        const fetched = await api.fetchOffer(id);
+        setOffer(fetched);
+      } catch (err) {
+        console.error("Failed to load offer:", err);
+        setError("Offer not found.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  const toggleFavorite = () => {
+    if (!id) return;
+    setFavorites(prev =>
+      prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]
+    );
   };
+
+  const toggleCompare = () => {
+    if (!id) return;
+    setCompareList(prev =>
+      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    );
+  };
+
+  const handleInquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role !== "CUSTOMER") {
+      setInquiryError("Only customers can submit inquiries.");
+      return;
+    }
+    if (!id) return;
+
+    setInquiryLoading(true);
+    setInquiryError("");
+    setInquirySuccess(false);
+
+    try {
+      await api.createInquiry({ subject, message, offerId: id });
+      setInquirySuccess(true);
+      setSubject("");
+      setMessage("");
+      setTimeout(() => setInquiryOpen(false), 2000);
+    } catch (err) {
+      setInquiryError(err instanceof Error ? err.message : "Failed to submit inquiry.");
+    } finally {
+      setInquiryLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center bg-gray-50">
+          <p className="text-gray-500">Loading offer details...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !offer) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Offer Not Found</h2>
+            <Link to="/offers" className="text-amber-600 hover:underline font-semibold">Back to browse offers</Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const isFavorite = favorites.includes(offer.id);
+  const isCompared = compareList.includes(offer.id);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -36,30 +147,32 @@ export default function OfferDetails() {
         <section className="bg-gradient-to-br from-amber-50 to-orange-50 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-              <Link to="/" className="hover:text-amber-600">Home</Link>
+              <Link to="/" className="hover:text-amber-600 font-medium">Home</Link>
               <span>/</span>
-              <Link to="/offers" className="hover:text-amber-600">Offers</Link>
+              <Link to="/offers" className="hover:text-amber-600 font-medium">Offers</Link>
               <span>/</span>
-              <span className="text-gray-900">{offer.center}</span>
+              <span className="text-gray-900 font-medium">{offer.center?.name}</span>
             </div>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{offer.center}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{offer.title}</h1>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-1">
                     <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                    <span className="font-semibold">{offer.rating}</span>
-                    <span className="text-gray-600">({offer.reviews} reviews)</span>
+                    <span className="font-semibold">{offer.center?.rating || 4.5}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-gray-600">
                     <MapPin className="w-4 h-4" />
-                    <span>{offer.location}</span>
+                    <span>{offer.center?.city || "Colombo"}</span>
                   </div>
                 </div>
               </div>
-              <button className="mt-4 md:mt-0 flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors">
-                <Heart className="w-5 h-5" />
-                <span>Save Offer</span>
+              <button
+                onClick={toggleFavorite}
+                className="mt-4 md:mt-0 flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors cursor-pointer"
+              >
+                <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                <span>{isFavorite ? "Saved" : "Save Offer"}</span>
               </button>
             </div>
           </div>
@@ -78,7 +191,7 @@ export default function OfferDetails() {
                       </div>
                       <div>
                         <div className="text-sm text-gray-600">Interest Rate</div>
-                        <div className="text-xl font-semibold text-amber-600">{offer.rate} per month</div>
+                        <div className="text-xl font-semibold text-amber-600">{offer.rate}% per month</div>
                       </div>
                     </div>
 
@@ -87,8 +200,8 @@ export default function OfferDetails() {
                         <DollarSign className="w-5 h-5 text-amber-600" />
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Loan Amount Range</div>
-                        <div className="text-lg font-semibold">LKR {offer.minAmount} - {offer.maxAmount}</div>
+                        <div className="text-sm text-gray-600">Maximum Loan Amount</div>
+                        <div className="text-lg font-semibold">LKR {offer.maxAmount.toLocaleString()}</div>
                       </div>
                     </div>
 
@@ -107,8 +220,8 @@ export default function OfferDetails() {
                         <Clock className="w-5 h-5 text-amber-600" />
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Processing Time</div>
-                        <div className="text-lg font-semibold">{offer.processingTime}</div>
+                        <div className="text-sm text-gray-600">Type</div>
+                        <div className="text-lg font-semibold">{offer.type}</div>
                       </div>
                     </div>
 
@@ -117,70 +230,32 @@ export default function OfferDetails() {
                         <Shield className="w-5 h-5 text-amber-600" />
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Gold Purity Accepted</div>
-                        <div className="text-lg font-semibold">{offer.goldPurity}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-5 h-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-600">Renewal Option</div>
-                        <div className="text-lg font-semibold">{offer.renewalOption}</div>
+                        <div className="text-sm text-gray-600">Merchant Info</div>
+                        <div className="text-lg font-semibold">{offer.business?.businessName || offer.center?.name}</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Key Features</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {offer.features.map((feature, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                          <span className="text-green-600 text-xs">✓</span>
-                        </div>
-                        <span className="text-gray-700">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">About {offer.center}</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
                   <p className="text-gray-600 mb-4">
-                    {offer.center} has been serving customers across Sri Lanka for over 15 years, providing reliable and transparent gold loan services. We pride ourselves on offering competitive rates and exceptional customer service.
-                  </p>
-                  <p className="text-gray-600">
-                    Our experienced team ensures a smooth and hassle-free loan process, with same-day approvals and flexible repayment options. We maintain the highest standards of security for your valuable gold items.
+                    {offer.description || "No description provided for this offer."}
                   </p>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Customer Reviews</h2>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((review) => (
-                      <div key={review} className="border-b pb-4 last:border-b-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                            <div>
-                              <div className="font-semibold">Customer Name</div>
-                              <div className="text-sm text-gray-600">2 weeks ago</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                            <span className="font-semibold">4.5</span>
-                          </div>
-                        </div>
-                        <p className="text-gray-600">
-                          Great service! Very professional and the process was quick and easy. Would definitely recommend.
-                        </p>
-                      </div>
-                    ))}
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">About {offer.center?.name}</h2>
+                  <p className="text-gray-600 mb-4">
+                    {offer.center?.description || `${offer.center?.name} is a verified pawning provider on AurumLK.`}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t text-sm text-gray-600">
+                    <div>
+                      <strong>Address:</strong> {offer.center?.address}
+                    </div>
+                    <div>
+                      <strong>Phone:</strong> {offer.center?.phone}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -189,41 +264,32 @@ export default function OfferDetails() {
                 <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8">
                   <div className="text-center mb-6">
                     <div className="text-3xl font-bold text-amber-600 mb-2">
-                      {offer.rate}
+                      {offer.rate}%
                     </div>
                     <div className="text-gray-600">Interest Rate per Month</div>
                   </div>
 
                   <div className="space-y-3 mb-6">
-                    <button className="w-full px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold">
+                    <button
+                      onClick={() => setInquiryOpen(true)}
+                      className="w-full px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold cursor-pointer"
+                    >
                       Send Inquiry
                     </button>
                     <Link
                       to="/calculator"
-                      className="w-full block text-center px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="w-full block text-center px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
                     >
                       Calculate Loan
                     </Link>
-                    <Link
-                      to="/compare"
-                      className="w-full block text-center px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    <button
+                      onClick={toggleCompare}
+                      className={`w-full px-6 py-3 border rounded-lg transition-colors font-semibold cursor-pointer ${
+                        isCompared ? "bg-orange-50 border-primary text-primary" : "border-gray-300 hover:bg-gray-50"
+                      }`}
                     >
-                      Add to Compare
-                    </Link>
-                  </div>
-
-                  <div className="border-t pt-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Need Help?</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Contact us for more information about this offer
-                    </p>
-                    <Link
-                      to="/contact"
-                      className="text-amber-600 hover:text-amber-700 text-sm flex items-center space-x-1"
-                    >
-                      <span>Contact Support</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
+                      {isCompared ? "Remove Compare" : "Add to Compare"}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -232,8 +298,78 @@ export default function OfferDetails() {
         </section>
       </main>
 
+      {/* Inquiry Form Modal */}
+      {inquiryOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setInquiryOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold p-1"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <MessageSquare className="w-6 h-6 text-amber-500" />
+              <span>Send Inquiry</span>
+            </h2>
+
+            {!user ? (
+              <div className="text-center py-6">
+                <p className="text-gray-600 mb-4">You must be logged in as a customer to submit inquiries.</p>
+                <Link
+                  to="/login"
+                  className="px-6 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold inline-block"
+                >
+                  Log In
+                </Link>
+              </div>
+            ) : user.role !== "CUSTOMER" ? (
+              <p className="text-red-600 py-4 text-center">Only customer accounts can submit gold loan inquiries.</p>
+            ) : inquirySuccess ? (
+              <div className="text-center py-6 text-green-600">
+                <p className="font-semibold text-lg mb-2">Inquiry Submitted Successfully!</p>
+                <p className="text-sm text-gray-500">The merchant will review and respond shortly.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleInquirySubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Loan Rate Details"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your message to the gold loan center here..."
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 h-32"
+                    required
+                  />
+                </div>
+
+                {inquiryError && <p className="text-sm text-red-600">{inquiryError}</p>}
+
+                <button
+                  type="submit"
+                  disabled={inquiryLoading}
+                  className="w-full py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold disabled:opacity-60 cursor-pointer"
+                >
+                  {inquiryLoading ? "Submitting..." : "Submit Inquiry"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
 }
-
