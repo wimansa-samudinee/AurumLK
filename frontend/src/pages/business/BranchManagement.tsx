@@ -1,16 +1,48 @@
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import DashboardSidebar from "../../components/DashboardSidebar";
 import { MapPin, Phone, Clock, Edit, Trash2, Plus } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import * as api from "../../lib/api";
 
 export default function BranchManagement() {
-  const branches = [
-    { id: 1, name: "Main Branch", address: "123 Main St, Colombo 03", phone: "+94 11 234 5678", status: "Active" },
-    { id: 2, name: "Kandy Branch", address: "45 Main St, Kandy", phone: "+94 81 234 5678", status: "Active" },
-    { id: 3, name: "Galle Branch", address: "78 Beach Rd, Galle", phone: "+94 91 234 5678", status: "Active" },
-  ];
+  const { user } = useAuth();
+  const [center, setCenter] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function loadData() {
+    if (!user) return;
+    try {
+      const centers = await api.fetchCenters();
+      const myCenter = centers.find(
+        c => c.name.toLowerCase() === (user.businessName || "").toLowerCase()
+      );
+      setCenter(myCenter);
+    } catch (err) {
+      console.error("Failed to load branches:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this branch?")) return;
+    try {
+      await api.deleteBranch(id);
+      loadData();
+    } catch (err) {
+      alert("Failed to delete branch.");
+    }
+  };
+
+  const branches = center?.branches || [];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 text-foreground">
       <DashboardSidebar role="business" />
 
       <main className="flex-1">
@@ -22,57 +54,78 @@ export default function BranchManagement() {
             </div>
             <Link
               to="/business/branches/add"
-              className="flex items-center space-x-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+              className="flex items-center space-x-2 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold"
             >
               <Plus className="w-5 h-5" />
               <span>Add Branch</span>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {branches.map((branch) => (
-              <div key={branch.id} className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex items-start justify-between mb-4">
+          {loading ? (
+            <div className="py-12 text-center text-gray-500 font-semibold">Loading branches...</div>
+          ) : branches.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {branches.map((branch: any) => (
+                <div key={branch.id} className="bg-white rounded-lg shadow-sm border p-6 flex flex-col justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{branch.name}</h3>
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
-                      {branch.status}
-                    </span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="p-2 text-gray-600 hover:text-amber-600 transition-colors">
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 text-gray-600 hover:text-red-600 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{branch.name}</h3>
+                        <span className="inline-block mt-1 px-2.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-semibold">
+                          Active
+                        </span>
+                      </div>
+                      <div className="flex space-x-1">
+                        <Link
+                          to={`/business/branches/edit/${branch.id}`}
+                          className="p-2 text-gray-600 hover:text-amber-600 transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(branch.id)}
+                          className="p-2 text-gray-600 hover:text-red-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-2">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <span className="text-sm text-gray-600">{branch.address}, {branch.city}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{branch.phone}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{branch.openingHours}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <span className="text-sm text-gray-600">{branch.address}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{branch.phone}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Mon-Fri: 9AM-6PM</span>
-                  </div>
-                </div>
-
-                <button className="mt-4 w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
-                  View Details
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+              <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Branches Configured</h3>
+              <p className="text-gray-600 mb-6">
+                Add your business branch locations to help customers locate you.
+              </p>
+              <Link
+                to="/business/branches/add"
+                className="inline-block px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold"
+              >
+                Add Your First Branch
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
-

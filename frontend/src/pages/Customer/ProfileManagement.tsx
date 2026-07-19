@@ -1,42 +1,70 @@
 import DashboardSidebar from "../../components/DashboardSidebar";
-import { User, Mail, Phone, MapPin, Lock, Bell } from "lucide-react";
+import { User, Mail } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import * as api from "../../lib/api";
 
 export default function ProfileManagement() {
+  const { user, refresh } = useAuth();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+    try {
+      await api.updateUser(user.id, { name, email });
+      await refresh();
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 text-foreground">
       <DashboardSidebar role="customer" />
 
       <main className="flex-1">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Management</h1>
-            <p className="text-gray-600">Update your personal information and preferences</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h1>
+            <p className="text-gray-600">Update your account information</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Information</h2>
-                <form className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        First Name
-                      </label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="text"
-                        defaultValue="John"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="Doe"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
                       />
                     </div>
                   </div>
@@ -49,185 +77,34 @@ export default function ProfileManagement() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="email"
-                        defaultValue="john.doe@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="tel"
-                        defaultValue="+94 77 123 4567"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
+                  {success && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                      Profile updated successfully!
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                      <textarea
-                        rows={3}
-                        defaultValue="123 Main Street, Colombo 03, Sri Lanka"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
+                  {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                      {error}
                     </div>
-                  </div>
+                  )}
 
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold disabled:opacity-60 cursor-pointer"
                   >
-                    Save Changes
+                    {loading ? "Saving Changes..." : "Save Changes"}
                   </button>
                 </form>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Change Password</h2>
-                <form className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="password"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="password"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="password"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-                  >
-                    Update Password
-                  </button>
-                </form>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Notification Preferences</h2>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="mt-1 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">Email Notifications</div>
-                      <div className="text-sm text-gray-600">Receive updates about offers and inquiries</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="mt-1 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">Marketing Communications</div>
-                      <div className="text-sm text-gray-600">Receive promotional offers and news</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      className="mt-1 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">SMS Notifications</div>
-                      <div className="text-sm text-gray-600">Receive text messages for important updates</div>
-                    </div>
-                  </div>
-                </div>
-
-                <button className="mt-6 px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors">
-                  Save Preferences
-                </button>
-              </div>
-            </div>
-
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8">
-                <div className="text-center mb-6">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <User className="w-12 h-12 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900">John Doe</h3>
-                  <p className="text-gray-600">Customer</p>
-                </div>
-
-                <button className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mb-4">
-                  Change Profile Picture
-                </button>
-
-                <div className="border-t pt-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Account Stats</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Member Since</span>
-                      <span className="text-sm font-medium">Jan 2026</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Saved Offers</span>
-                      <span className="text-sm font-medium">3</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Total Inquiries</span>
-                      <span className="text-sm font-medium">8</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6 mt-6">
-                  <button className="w-full px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors">
-                    Delete Account
-                  </button>
-                </div>
               </div>
             </div>
           </div>

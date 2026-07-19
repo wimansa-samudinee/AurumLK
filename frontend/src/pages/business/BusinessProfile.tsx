@@ -1,150 +1,203 @@
 import DashboardSidebar from "../../components/DashboardSidebar";
-import { Building2, Mail, Phone, MapPin, Globe, FileText } from "lucide-react";
+import { Building2, Phone, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import * as api from "../../lib/api";
 
 export default function BusinessProfile() {
+  const { user } = useAuth();
+  const [center, setCenter] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Form fields
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      if (!user) return;
+      try {
+        const centers = await api.fetchCenters();
+        const myCenter = centers.find(
+          c => c.name.toLowerCase() === (user.businessName || "").toLowerCase()
+        );
+        if (myCenter) {
+          setCenter(myCenter);
+          setName(myCenter.name || "");
+          setDescription(myCenter.description || "");
+          setAddress(myCenter.address || "");
+          setCity(myCenter.city || "");
+          setPhone(myCenter.phone || "");
+        }
+        setLicenseNumber(user.licenseNumber || "");
+      } catch (err) {
+        console.error("Failed to load business profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!center) return;
+    setSaving(true);
+    setError("");
+    setSuccess(false);
+    try {
+      await api.updateCenter(center.id, {
+        name,
+        description,
+        address,
+        city,
+        phone,
+      });
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 text-foreground">
       <DashboardSidebar role="business" />
 
       <main className="flex-1">
         <div className="p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Business Profile</h1>
-            <p className="text-gray-600">Manage your business information</p>
+            <p className="text-gray-600">Manage your business profile and center information</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Business Information</h2>
-                <form className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          {loading ? (
+            <div className="py-12 text-center text-gray-500 font-semibold">Loading profile...</div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">Pawning Center Details</h2>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Pawning Center Name</label>
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Full Address</label>
                       <input
                         type="text"
-                        defaultValue="Gold Star Finance"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
                       />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="email"
-                          defaultValue="info@goldstar.lk"
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="tel"
-                          defaultValue="+94 11 234 5678"
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
-                    <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="url"
-                        defaultValue="https://goldstar.lk"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                       <textarea
-                        rows={3}
-                        defaultValue="123 Main Street, Colombo 03, Sri Lanka"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 h-32"
+                        required
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea
-                      rows={5}
-                      defaultValue="Gold Star Finance has been serving customers across Sri Lanka for over 15 years..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
+                    {success && (
+                      <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-200 font-semibold">
+                        Profile updated successfully!
+                      </p>
+                    )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Business License Number</label>
-                    <div className="relative">
-                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        defaultValue="CB/PL/2009/123"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        disabled
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Contact support to update license information</p>
-                  </div>
+                    {error && (
+                      <p className="text-sm text-red-700 bg-red-50 p-3 rounded-lg border border-red-200 font-semibold">
+                        {error}
+                      </p>
+                    )}
 
-                  <button className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors">
-                    Save Changes
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Business Logo</h3>
-                <div className="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                  <Building2 className="w-16 h-16 text-gray-400" />
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-6 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-semibold transition-colors disabled:opacity-60 cursor-pointer"
+                    >
+                      {saving ? "Saving..." : "Save Changes"}
+                    </button>
+                  </form>
                 </div>
-                <button className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mb-6">
-                  Upload Logo
-                </button>
+              </div>
 
-                <div className="border-t pt-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Verification Status</h4>
-                  <div className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm mb-4">
-                    ✓ Verified Business
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Member Since:</span>
-                      <span className="font-medium">2009</span>
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">Verification Info</h2>
+                  <div className="space-y-4 text-sm text-gray-600">
+                    <div>
+                      <strong>License Number:</strong>
+                      <div className="mt-1 text-gray-900">{licenseNumber || "N/A"}</div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Branches:</span>
-                      <span className="font-medium">8</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Active Offers:</span>
-                      <span className="font-medium">12</span>
+                    <div>
+                      <strong>Account Status:</strong>
+                      <div className="mt-1">
+                        <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                          Approved & Verified
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
-

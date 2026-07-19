@@ -74,6 +74,27 @@ export async function register(payload: RegisterPayload) {
   });
 }
 
+export async function forgotPassword(email: string) {
+  return request<{ message: string; resetLink: string; testPreviewUrl?: string | null }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyResetToken(payload: { email: string; token: string }) {
+  return request<{ valid: boolean }>("/api/auth/verify-reset-token", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function resetPassword(payload: any) {
+  return request<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function fetchMe() {
   return request<User>("/api/auth/me");
 }
@@ -136,6 +157,12 @@ export async function updateOffer(id: string, payload: Partial<Offer>) {
   });
 }
 
+export async function deleteOffer(id: string) {
+  return request<any>(`/api/offers/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function fetchUsers() {
   return request<User[]>("/api/users");
 }
@@ -144,6 +171,33 @@ export async function updateUser(id: string, payload: Partial<User>) {
   return request<User>(`/api/users/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCenter(id: string, payload: any) {
+  return request<any>(`/api/centers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createBranch(payload: any) {
+  return request<any>("/api/branches", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateBranch(id: string, payload: any) {
+  return request<any>(`/api/branches/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteBranch(id: string) {
+  return request<any>(`/api/branches/${id}`, {
+    method: "DELETE",
   });
 }
 
