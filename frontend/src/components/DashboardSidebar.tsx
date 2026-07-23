@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import {
   LayoutDashboard,
   Heart,
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 export default function DashboardSidebar({ role }: SidebarProps) {
   const location = useLocation();
+  const { logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -76,7 +78,10 @@ export default function DashboardSidebar({ role }: SidebarProps) {
           </Link>
         ))}
 
-        <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-destructive transition-all font-medium mt-8">
+        <button
+          onClick={logout}
+          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-destructive transition-all font-medium mt-8"
+        >
           <LogOut className="w-5 h-5" />
           <span>Logout</span>
         </button>
