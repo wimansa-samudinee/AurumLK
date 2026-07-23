@@ -128,7 +128,35 @@ pnpm db:seed
 
 ## 🌐 Hosting & Deployment
 
-For a detailed walkthrough on hosting the database, deploying the backend API on **Render**, and hosting the frontend web application on **Vercel**, refer to the **[Deployment & Hosting Guide](file:///C:/Users/LENOVO/.gemini/antigravity-ide/brain/2488ccb2-82c3-4f0d-995c-3098283e2bad/deployment_guide.md)**.
+AurumLK is fully hosted and running live in the cloud:
+
+*   **Live Web Application (Frontend)**: [https://aurumlk-app.vercel.app](https://aurumlk-app.vercel.app)
+*   **Live API Server (Backend)**: [https://aurumlk.vercel.app](https://aurumlk.vercel.app)
+*   **Database**: PostgreSQL hosted on [Neon.tech](https://neon.tech/)
+
+---
+
+### Cloud Setup & Configuration
+
+This project is configured for serverless deployment on **Vercel** (for both frontend and backend) using a hosted **PostgreSQL** database:
+
+#### 1. Database Configuration
+* Host a serverless PostgreSQL database on Neon.tech.
+* Push database tables: `npx prisma db push`
+* Seed initial database values: `pnpm db:seed`
+
+#### 2. Backend Deployment (Vercel)
+* Target folder: `/backend`
+* Framework Preset: Express
+* Environment Variables required:
+  * `DATABASE_URL`: *(Your PostgreSQL connection string)*
+  * `JWT_SECRET`: *(Your authentication JWT secret key)*
+
+#### 3. Frontend Deployment (Vercel)
+* Target folder: `/frontend`
+* Framework Preset: Vite
+* Environment Variables required:
+  * `VITE_API_URL`: `https://aurumlk.vercel.app`
 
 ---
 
