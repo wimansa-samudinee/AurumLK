@@ -8,7 +8,7 @@ AurumLK is a modern, responsive **Gold Loan Comparison Platform** built using a 
 
 The project is structured as a `pnpm` workspace monorepo:
 * **`frontend/`**: A React application built with TypeScript, Vite, Tailwind CSS, and Material-UI (MUI) icons.
-* **`backend/`**: An Express server built with TypeScript, Prisma ORM, and SQLite.
+* **`backend/`**: An Express server built with TypeScript, Prisma ORM, and PostgreSQL (or SQLite).
 
 ---
 
@@ -24,7 +24,7 @@ The project is structured as a `pnpm` workspace monorepo:
 ### Backend
 - **Framework**: Express.js
 - **Language**: TypeScript
-- **Database**: SQLite (via Prisma ORM)
+- **Database**: PostgreSQL (Production) / SQLite (Development) via Prisma ORM
 - **Auth**: JWT (JSON Web Tokens) & bcrypt
 - **Mailing**: Nodemailer (with Ethereal Mail fallback for development)
 
@@ -65,13 +65,14 @@ pnpm install
 ```
 
 ### 2. Database Initialization
-Generate the Prisma client, run database migrations, and seed initial data:
+Generate the Prisma client, push database tables, and seed initial data:
 ```bash
 # Generate the Prisma Client
 pnpm db:generate
 
-# Run SQLite migrations
-pnpm db:migrate
+# Push the schema to your database (local or cloud)
+# Note: Ensure DATABASE_URL is configured in backend/.env before running
+npx prisma db push
 
 # Seed mock gold loan offers, centers, and branches
 pnpm db:seed
@@ -80,12 +81,19 @@ pnpm db:seed
 ### 3. Environment Variables Configuration
 
 #### Backend Configuration (`backend/.env`)
-Create or edit `backend/.env` file with the following variables:
+Create or edit the `backend/.env` file. You can choose to run with SQLite or PostgreSQL:
+
+**For Cloud PostgreSQL (Production - Recommended):**
+```env
+DATABASE_URL="postgresql://username:password@hostname:port/dbname?sslmode=require"
+JWT_SECRET="your_super_secret_jwt_key_here"
+```
+
+**For Local SQLite (Development):**
+*Update `provider = "sqlite"` in `backend/prisma/schema.prisma` first.*
 ```env
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="your_super_secret_jwt_key_here"
-
-
 ```
 
 #### Frontend Configuration (`frontend/.env`)
@@ -115,6 +123,12 @@ pnpm prisma:studio
 # Run database seed again
 pnpm db:seed
 ```
+
+---
+
+## 🌐 Hosting & Deployment
+
+For a detailed walkthrough on hosting the database, deploying the backend API on **Render**, and hosting the frontend web application on **Vercel**, refer to the **[Deployment & Hosting Guide](file:///C:/Users/LENOVO/.gemini/antigravity-ide/brain/2488ccb2-82c3-4f0d-995c-3098283e2bad/deployment_guide.md)**.
 
 ---
 
