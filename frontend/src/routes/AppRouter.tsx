@@ -35,12 +35,19 @@ import BusinessApproval from "../pages/admin/BusinessApproval";
 import AdminOfferManagement from "../pages/admin/AdminOfferManagement";
 import ReportsAnalytics from "../pages/admin/ReportsAnalytics";
 
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import TermsOfService from "../pages/TermsOfService";
+import HelpCenter from "../pages/HelpCenter";
+
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/help" element={<HelpCenter />} />
       <Route path="/offers" element={<BrowseOffers />} />
       <Route path="/offers/:id" element={<OfferDetails />} />
       <Route path="/compare" element={<CompareOffers />} />
