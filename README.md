@@ -130,9 +130,7 @@ pnpm db:seed
 
 AurumLK is fully hosted and running live in the cloud:
 
-*   **Live Web Application (Frontend)**: [https://aurumlk-app.vercel.app](https://aurumlk-app.vercel.app)
-*   **Live API Server (Backend)**: [https://aurumlk.vercel.app](https://aurumlk.vercel.app)
-*   **Database**: PostgreSQL hosted on [Neon.tech](https://neon.tech/)
+*   **Live Web Application : [https://aurumlk-app.vercel.app](https://aurumlk-app.vercel.app)
 
 ---
 
