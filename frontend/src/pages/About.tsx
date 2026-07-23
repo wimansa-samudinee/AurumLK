@@ -32,8 +32,12 @@ export default function About() {
                   Our platform serves as a trusted intermediary, ensuring that all listed pawning centers meet our strict verification standards and providing customers with the tools they need to find the best deals.
                 </p>
               </div>
-              <div className="bg-card rounded-3xl h-96 flex items-center justify-center shadow-lg border border-border">
-                <span className="text-primary text-xl">Image Placeholder</span>
+              <div className="bg-card rounded-3xl h-96 flex items-center justify-center shadow-lg border border-border overflow-hidden p-6 bg-white/50 backdrop-blur-sm">
+                <img
+                  src="/about-image.png"
+                  alt="AurumLK Logo"
+                  className="max-h-full max-w-full object-contain transition-transform hover:scale-105 duration-300"
+                />
               </div>
             </div>
           </div>

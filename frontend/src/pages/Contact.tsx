@@ -93,8 +93,17 @@ export default function Contact() {
         <section className="py-16 bg-muted/20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold text-foreground mb-6 text-center">Find Us On The Map</h2>
-            <div className="bg-card rounded-3xl h-96 flex items-center justify-center border border-border">
-              <span className="text-muted-foreground text-xl">Map Integration Placeholder</span>
+            <div className="bg-card rounded-3xl h-96 overflow-hidden border border-border shadow-md">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.8983944648753!2d79.84883497587889!3d6.901529193097893!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae2594191d4e0dd%3A0xc3f51083ee30263!2sColombo%2003%2C%20Colombo!5e0!3m2!1sen!2slk!4v1700000000000!5m2!1sen!2slk"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={true}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Office Location Map"
+              ></iframe>
             </div>
           </div>
         </section>
