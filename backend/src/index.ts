@@ -27,9 +27,11 @@ app.get("/", (_req, res) => {
   res.json({ status: "AurumLK backend is running." });
 });
 
-const port = process.env.PORT ? Number(process.env.PORT) : 4000;
-app.listen(port, () => {
-  console.log(`Backend server listening on http://localhost:${port}`);
-});
+if (!process.env.VERCEL) {
+  const port = process.env.PORT ? Number(process.env.PORT) : 4000;
+  app.listen(port, () => {
+    console.log(`Backend server listening on http://localhost:${port}`);
+  });
+}
 
 export default app;
