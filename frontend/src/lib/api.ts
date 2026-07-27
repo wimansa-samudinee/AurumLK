@@ -136,7 +136,7 @@ export async function createInquiry(payload: { subject: string; message: string;
   });
 }
 
-export async function updateInquiry(id: string, payload: Partial<{ status: string; message: string }>) {
+export async function updateInquiry(id: string, payload: Partial<{ status: string; message: string; reply: string }>) {
   return request<Inquiry>(`/api/inquiries/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),

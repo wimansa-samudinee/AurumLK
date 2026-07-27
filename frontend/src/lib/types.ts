@@ -56,6 +56,7 @@ export interface Inquiry {
   subject: string;
   message: string;
   status: InquiryStatus;
+  reply?: string | null;
   customerId: string;
   businessId?: string | null;
   offerId?: string | null;

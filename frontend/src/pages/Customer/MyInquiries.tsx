@@ -91,11 +91,17 @@ export default function MyInquiries() {
                     {/* Display reply if status is ANSWERED */}
                     {inquiry.status === "ANSWERED" && (
                       <div className="bg-green-50/50 rounded-lg border border-green-100 p-4 text-sm text-gray-800">
-                        <strong>Response:</strong>
-                        <p className="mt-1 whitespace-pre-wrap font-medium">
-                          The gold loan center reviewed your inquiry and replied. Please contact them at{" "}
-                          <span className="text-amber-600 font-semibold">{inquiry.business?.email}</span> to finalize negotiations.
-                        </p>
+                        <strong>Response from {inquiry.business?.businessName || inquiry.offer?.center?.name || "Provider"}:</strong>
+                        {inquiry.reply ? (
+                          <p className="mt-2 whitespace-pre-wrap font-semibold text-gray-900 bg-white/60 p-3 rounded border border-green-200/50">
+                            {inquiry.reply}
+                          </p>
+                        ) : (
+                          <p className="mt-1 whitespace-pre-wrap font-medium">
+                            The gold loan center reviewed your inquiry and replied. Please contact them at{" "}
+                            <span className="text-amber-600 font-semibold">{inquiry.business?.email}</span> to finalize negotiations.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
