@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 import Home from "../pages/Home";
 import About from "../pages/About";
@@ -60,27 +61,36 @@ export default function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-      <Route path="/customer/favorites" element={<Favorites />} />
-      <Route path="/customer/inquiries" element={<MyInquiries />} />
-      <Route path="/customer/profile" element={<ProfileManagement />} />
+      {/* Customer Routes */}
+      <Route element={<ProtectedRoute allowedRoles={["CUSTOMER"]} />}>
+        <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+        <Route path="/customer/favorites" element={<Favorites />} />
+        <Route path="/customer/inquiries" element={<MyInquiries />} />
+        <Route path="/customer/profile" element={<ProfileManagement />} />
+      </Route>
 
-      <Route path="/business/dashboard" element={<BusinessDashboard />} />
-      <Route path="/business/profile" element={<BusinessProfile />} />
-      <Route path="/business/branches" element={<BranchManagement />} />
-      <Route path="/business/branches/add" element={<AddEditBranch />} />
-      <Route path="/business/branches/edit/:id" element={<AddEditBranch />} />
-      <Route path="/business/offers" element={<OfferManagement />} />
-      <Route path="/business/offers/add" element={<AddEditOffer />} />
-      <Route path="/business/offers/edit/:id" element={<AddEditOffer />} />
-      <Route path="/business/inquiries" element={<InquiryManagement />} />
-      <Route path="/business/analytics" element={<BusinessAnalytics />} />
+      {/* Business Routes */}
+      <Route element={<ProtectedRoute allowedRoles={["BUSINESS"]} />}>
+        <Route path="/business/dashboard" element={<BusinessDashboard />} />
+        <Route path="/business/profile" element={<BusinessProfile />} />
+        <Route path="/business/branches" element={<BranchManagement />} />
+        <Route path="/business/branches/add" element={<AddEditBranch />} />
+        <Route path="/business/branches/edit/:id" element={<AddEditBranch />} />
+        <Route path="/business/offers" element={<OfferManagement />} />
+        <Route path="/business/offers/add" element={<AddEditOffer />} />
+        <Route path="/business/offers/edit/:id" element={<AddEditOffer />} />
+        <Route path="/business/inquiries" element={<InquiryManagement />} />
+        <Route path="/business/analytics" element={<BusinessAnalytics />} />
+      </Route>
 
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/users" element={<UserManagement />} />
-      <Route path="/admin/approvals" element={<BusinessApproval />} />
-      <Route path="/admin/offers" element={<AdminOfferManagement />} />
-      <Route path="/admin/reports" element={<ReportsAnalytics />} />
+      {/* Admin Routes */}
+      <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<UserManagement />} />
+        <Route path="/admin/approvals" element={<BusinessApproval />} />
+        <Route path="/admin/offers" element={<AdminOfferManagement />} />
+        <Route path="/admin/reports" element={<ReportsAnalytics />} />
+      </Route>
     </Routes>
   );
 }
