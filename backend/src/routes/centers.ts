@@ -69,7 +69,12 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   // If name was updated, sync businessName for the business user(s)
   if (name && name !== existing.name) {
     await prisma.user.updateMany({
-      where: { businessName: existing.name },
+      where: {
+        businessName: {
+          equals: existing.name,
+          mode: "insensitive",
+        },
+      },
       data: { businessName: name },
     });
   }

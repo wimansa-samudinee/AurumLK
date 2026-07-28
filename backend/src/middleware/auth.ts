@@ -47,7 +47,7 @@ export function requireRole(role: string) {
 
 export async function verifyBusinessCenterAccess(userId: string, centerId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.role !== "BUSINESS" || !user.businessName) {
+  if (!user || user.role !== "BUSINESS" || !user.businessName || !user.approved) {
     return false;
   }
   const center = await prisma.center.findUnique({ where: { id: centerId } });

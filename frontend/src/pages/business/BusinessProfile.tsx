@@ -189,9 +189,15 @@ export default function BusinessProfile() {
                     <div>
                       <strong>Account Status:</strong>
                       <div className="mt-1">
-                        <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                          Approved & Verified
-                        </span>
+                        {user?.approved ? (
+                          <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                            Approved & Verified
+                          </span>
+                        ) : (
+                          <span className="bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                            Pending Approval
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
