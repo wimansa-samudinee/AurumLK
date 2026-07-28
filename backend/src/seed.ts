@@ -23,12 +23,33 @@ async function seed() {
   const businessEmail = process.env.SEED_BUSINESS_EMAIL;
   const businessLicense = process.env.SEED_BUSINESS_LICENSE;
 
+  const centerDesc = process.env.SEED_CENTER_DESC;
+  const centerAddr = process.env.SEED_CENTER_ADDR;
+  const centerCity = process.env.SEED_CENTER_CITY;
+  const centerPhone = process.env.SEED_CENTER_PHONE;
+  const centerWeb = process.env.SEED_CENTER_WEB;
+
+  const branch1Name = process.env.SEED_BRANCH_1_NAME;
+  const branch1Addr = process.env.SEED_BRANCH_1_ADDR;
+  const branch1City = process.env.SEED_BRANCH_1_CITY;
+  const branch1Phone = process.env.SEED_BRANCH_1_PHONE;
+  const branch1Hours = process.env.SEED_BRANCH_1_HOURS;
+
+  const branch2Name = process.env.SEED_BRANCH_2_NAME;
+  const branch2Addr = process.env.SEED_BRANCH_2_ADDR;
+  const branch2City = process.env.SEED_BRANCH_2_CITY;
+  const branch2Phone = process.env.SEED_BRANCH_2_PHONE;
+  const branch2Hours = process.env.SEED_BRANCH_2_HOURS;
+
   if (
     !adminPasswordRaw || !customerPasswordRaw || !businessPasswordRaw ||
     !adminName || !adminEmail || !customerName || !customerEmail ||
-    !businessName || !businessEmail || !businessLicense
+    !businessName || !businessEmail || !businessLicense ||
+    !centerDesc || !centerAddr || !centerCity || !centerPhone || !centerWeb ||
+    !branch1Name || !branch1Addr || !branch1City || !branch1Phone || !branch1Hours ||
+    !branch2Name || !branch2Addr || !branch2City || !branch2Phone || !branch2Hours
   ) {
-    throw new Error("All seed variables (passwords, names, emails, license) must be configured in environment variables.");
+    throw new Error("All seed variables (passwords, names, emails, license, center, branches) must be configured in environment variables.");
   }
 
   const adminPassword = await bcrypt.hash(adminPasswordRaw, 10);
@@ -70,27 +91,27 @@ async function seed() {
   const center = await prisma.center.create({
     data: {
       name: businessName,
-      description: "Premium gold loan center with fast approval and flexible terms.",
-      address: "No. 12, Main Street, Colombo",
-      city: "Colombo",
-      phone: "+94 11 234 5678",
-      website: "https://goldstar.lk",
+      description: centerDesc,
+      address: centerAddr,
+      city: centerCity,
+      phone: centerPhone,
+      website: centerWeb,
       rating: 4.7,
       branches: {
         create: [
           {
-            name: "Colombo Head Office",
-            address: "No. 12, Main Street, Colombo",
-            city: "Colombo",
-            phone: "+94 11 234 5678",
-            openingHours: "Mon-Fri 9:00-18:00",
+            name: branch1Name,
+            address: branch1Addr,
+            city: branch1City,
+            phone: branch1Phone,
+            openingHours: branch1Hours,
           },
           {
-            name: "Colombo South Branch",
-            address: "No. 45, Galle Road, Colombo",
-            city: "Colombo",
-            phone: "+94 11 987 6543",
-            openingHours: "Mon-Sat 9:00-17:00",
+            name: branch2Name,
+            address: branch2Addr,
+            city: branch2City,
+            phone: branch2Phone,
+            openingHours: branch2Hours,
           },
         ],
       },
