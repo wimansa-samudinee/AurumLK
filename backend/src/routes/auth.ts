@@ -17,6 +17,10 @@ if (!jwtSecret) {
 router.post("/register", async (req, res) => {
   const { name, email, password, role = "CUSTOMER", businessName, licenseNumber } = req.body;
 
+  if (role === "ADMIN") {
+    return res.status(400).json({ error: "Cannot register as an administrator." });
+  }
+
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email, and password are required." });
   }
@@ -84,6 +88,24 @@ router.get("/me", authenticateToken, async (req: AuthRequest, res) => {
 
   if (!user) {
     return res.status(404).json({ error: "User not found." });
+  }
+
+  // Ensure center exists for approved business users
+  if (user.role === "BUSINESS" && user.approved && user.businessName) {
+    const existingCenter = await prisma.center.findFirst({
+      where: { name: { equals: user.businessName, mode: "insensitive" } }
+    });
+    if (!existingCenter) {
+      await prisma.center.create({
+        data: {
+          name: user.businessName,
+          description: "Details coming soon.",
+          address: "No address provided.",
+          city: "Colombo",
+          phone: "000-0000000",
+        }
+      });
+    }
   }
 
   return res.json(user);

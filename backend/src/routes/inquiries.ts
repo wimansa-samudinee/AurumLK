@@ -5,6 +5,13 @@ import { authenticateToken, AuthRequest } from "../middleware/auth.js";
 const router = Router();
 
 router.get("/", authenticateToken, async (req: AuthRequest, res) => {
+  if (req.userRole === "BUSINESS") {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user || !user.approved) {
+      return res.status(403).json({ error: "Your business account is pending approval." });
+    }
+  }
+
   const { status, businessId, customerId } = req.query;
   const where: any = {};
 
@@ -64,6 +71,13 @@ router.post("/", authenticateToken, async (req: AuthRequest, res) => {
 });
 
 router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
+  if (req.userRole === "BUSINESS") {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user || !user.approved) {
+      return res.status(403).json({ error: "Your business account is pending approval." });
+    }
+  }
+
   const { id } = req.params;
   const { status, message, reply } = req.body;
 

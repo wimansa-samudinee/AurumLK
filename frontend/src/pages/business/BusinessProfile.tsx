@@ -5,7 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import * as api from "../../lib/api";
 
 export default function BusinessProfile() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [center, setCenter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +36,8 @@ export default function BusinessProfile() {
           setAddress(myCenter.address || "");
           setCity(myCenter.city || "");
           setPhone(myCenter.phone || "");
+        } else {
+          setName(user.businessName || "");
         }
         setLicenseNumber(user.licenseNumber || "");
       } catch (err) {
@@ -61,6 +63,7 @@ export default function BusinessProfile() {
         city,
         phone,
       });
+      await refresh();
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile.");
@@ -186,9 +189,15 @@ export default function BusinessProfile() {
                     <div>
                       <strong>Account Status:</strong>
                       <div className="mt-1">
-                        <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                          Approved & Verified
-                        </span>
+                        {user?.approved ? (
+                          <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                            Approved & Verified
+                          </span>
+                        ) : (
+                          <span className="bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                            Pending Approval
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

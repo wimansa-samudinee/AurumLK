@@ -38,6 +38,25 @@ router.post("/business-approvals/:id/approve", authenticateToken, async (req: Au
   }
 
   const updated = await prisma.user.update({ where: { id }, data: { approved: true } });
+
+  // Create a default center for the approved business if it doesn't exist
+  if (business.businessName) {
+    const existingCenter = await prisma.center.findFirst({
+      where: { name: { equals: business.businessName, mode: "insensitive" } }
+    });
+    if (!existingCenter) {
+      await prisma.center.create({
+        data: {
+          name: business.businessName,
+          description: "Details coming soon.",
+          address: "No address provided.",
+          city: "Colombo",
+          phone: "000-0000000",
+        }
+      });
+    }
+  }
+
   return res.json(updated);
 });
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import prisma from "../prisma.js";
-import { authenticateToken, AuthRequest } from "../middleware/auth.js";
+import { authenticateToken, AuthRequest, verifyBusinessCenterAccess } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -46,6 +46,13 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
     return res.status(404).json({ error: "Center not found." });
   }
 
+  if (req.userRole === "BUSINESS") {
+    const hasAccess = await verifyBusinessCenterAccess(req.userId!, id);
+    if (!hasAccess) {
+      return res.status(403).json({ error: "Unauthorized. You can only update your own center." });
+    }
+  }
+
   const updateData: any = {};
   if (name) updateData.name = name;
   if (description !== undefined) updateData.description = description;
@@ -58,6 +65,19 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
     where: { id },
     data: updateData,
   });
+
+  // If name was updated, sync businessName for the business user(s)
+  if (name && name !== existing.name) {
+    await prisma.user.updateMany({
+      where: {
+        businessName: {
+          equals: existing.name,
+          mode: "insensitive",
+        },
+      },
+      data: { businessName: name },
+    });
+  }
 
   return res.json(center);
 });

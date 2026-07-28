@@ -1,6 +1,6 @@
 import { Router } from "express";
 import prisma from "../prisma.js";
-import { authenticateToken, AuthRequest } from "../middleware/auth.js";
+import { authenticateToken, AuthRequest, verifyBusinessCenterAccess } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -65,6 +65,13 @@ router.post("/", authenticateToken, async (req: AuthRequest, res) => {
     return res.status(400).json({ error: "Center not found." });
   }
 
+  if (req.userRole === "BUSINESS") {
+    const hasAccess = await verifyBusinessCenterAccess(req.userId!, centerId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: "Unauthorized. You cannot create an offer for this center." });
+    }
+  }
+
   const offer = await prisma.offer.create({
     data: {
       title,
@@ -97,6 +104,13 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
 
   if (req.userRole !== "BUSINESS" && req.userRole !== "ADMIN") {
     return res.status(403).json({ error: "Only businesses or admins can update offers." });
+  }
+
+  if (req.userRole === "BUSINESS" && centerId && centerId !== existing.centerId) {
+    const hasAccess = await verifyBusinessCenterAccess(req.userId!, centerId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: "Unauthorized. You cannot move this offer to this center." });
+    }
   }
 
   const updateData: any = {};
