@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import prisma from "../prisma.js";
 
 dotenv.config();
 
@@ -43,3 +44,16 @@ export function requireRole(role: string) {
     next();
   };
 }
+
+export async function verifyBusinessCenterAccess(userId: string, centerId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== "BUSINESS" || !user.businessName) {
+    return false;
+  }
+  const center = await prisma.center.findUnique({ where: { id: centerId } });
+  if (!center) {
+    return false;
+  }
+  return center.name.toLowerCase() === user.businessName.toLowerCase();
+}
+

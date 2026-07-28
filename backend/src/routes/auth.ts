@@ -17,6 +17,10 @@ if (!jwtSecret) {
 router.post("/register", async (req, res) => {
   const { name, email, password, role = "CUSTOMER", businessName, licenseNumber } = req.body;
 
+  if (role === "ADMIN") {
+    return res.status(400).json({ error: "Cannot register as an administrator." });
+  }
+
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email, and password are required." });
   }
