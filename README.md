@@ -86,14 +86,14 @@ Create or edit the `backend/.env` file. You can choose to run with SQLite or Pos
 **For Cloud PostgreSQL (Production - Recommended):**
 ```env
 DATABASE_URL="postgresql://username:password@hostname:port/dbname?sslmode=require"
-JWT_SECRET="your_super_secret_jwt_key_here"
+JWT_SECRET="generate_a_secure_jwt_secret_key_locally"
 ```
 
 **For Local SQLite (Development):**
 *Update `provider = "sqlite"` in `backend/prisma/schema.prisma` first.*
 ```env
 DATABASE_URL="file:./dev.db"
-JWT_SECRET="your_super_secret_jwt_key_here"
+JWT_SECRET="generate_a_secure_jwt_secret_key_locally"
 ```
 
 #### Frontend Configuration (`frontend/.env`)
@@ -160,13 +160,13 @@ This project is configured for serverless deployment on **Vercel** (for both fro
 
 ## 👥 Default Test Credentials
 
-Seeding the database (`pnpm db:seed`) creates default accounts for testing different user roles. You can log in using the credentials below:
+Seeding the database (`pnpm db:seed`) creates default accounts for testing different user roles. These accounts are created dynamically using the environment variables defined in your `backend/.env` file. You can log in using the configured credentials:
 
-| Role | Email Address | Password |
+| Role | Email Address (Load from .env) | Password (Load from .env) |
 |---|---|---|
-| **Administrator** | `admin@aurumlk.com` | `Admin123!` |
-| **Customer (Borrower)** | `jane.doe@example.com` | `Customer123!` |
-| **Business (Provider)** | `contact@goldstar.lk` | `Business123!` |
+| **Administrator** | `SEED_ADMIN_EMAIL` | `SEED_ADMIN_PASSWORD` |
+| **Customer (Borrower)** | `SEED_CUSTOMER_EMAIL` | `SEED_CUSTOMER_PASSWORD` |
+| **Business (Provider)** | `SEED_BUSINESS_EMAIL` | `SEED_BUSINESS_PASSWORD` |
 
 ---
 
