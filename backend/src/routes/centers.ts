@@ -1,6 +1,6 @@
 import { Router } from "express";
 import prisma from "../prisma.js";
-import { authenticateToken, AuthRequest } from "../middleware/auth.js";
+import { authenticateToken, AuthRequest, verifyBusinessCenterAccess } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -44,6 +44,13 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   const existing = await prisma.center.findUnique({ where: { id } });
   if (!existing) {
     return res.status(404).json({ error: "Center not found." });
+  }
+
+  if (req.userRole === "BUSINESS") {
+    const hasAccess = await verifyBusinessCenterAccess(req.userId!, id);
+    if (!hasAccess) {
+      return res.status(403).json({ error: "Unauthorized. You can only update your own center." });
+    }
   }
 
   const updateData: any = {};
