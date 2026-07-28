@@ -5,7 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import * as api from "../../lib/api";
 
 export default function BusinessProfile() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [center, setCenter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +36,8 @@ export default function BusinessProfile() {
           setAddress(myCenter.address || "");
           setCity(myCenter.city || "");
           setPhone(myCenter.phone || "");
+        } else {
+          setName(user.businessName || "");
         }
         setLicenseNumber(user.licenseNumber || "");
       } catch (err) {
@@ -61,6 +63,7 @@ export default function BusinessProfile() {
         city,
         phone,
       });
+      await refresh();
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile.");
