@@ -74,6 +74,7 @@ model Inquiry {
   subject     String
   message     String
   status      String   @default("NEW")
+  reply       String?
   customer    User     @relation("CustomerInquiries", fields: [customerId], references: [id])
   customerId  String
   business    User?    @relation("BusinessInquiries", fields: [businessId], references: [id])

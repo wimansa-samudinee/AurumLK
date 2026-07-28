@@ -7,6 +7,7 @@ export default function InquiryManagement() {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [replies, setReplies] = useState<Record<string, string>>({});
 
   async function loadData() {
     try {
@@ -29,6 +30,25 @@ export default function InquiryManagement() {
       loadData();
     } catch (err) {
       alert("Failed to update inquiry status.");
+    }
+  };
+
+  const handleSendReply = async (id: string) => {
+    const text = replies[id]?.trim();
+    if (!text) {
+      alert("Please type a reply message before sending.");
+      return;
+    }
+    try {
+      await api.updateInquiry(id, { status: "ANSWERED", reply: text });
+      setReplies(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      loadData();
+    } catch (err) {
+      alert("Failed to send reply to client.");
     }
   };
 
@@ -135,30 +155,49 @@ export default function InquiryManagement() {
                   </div>
 
                   {inquiry.status === "NEW" && (
-                    <div className="flex justify-end space-x-2 pt-4 border-t">
-                      <button
-                        onClick={() => handleUpdateStatus(inquiry.id, "ANSWERED")}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm cursor-pointer"
-                      >
-                        Mark as Replied
-                      </button>
-                      <button
-                        onClick={() => handleUpdateStatus(inquiry.id, "CLOSED")}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm cursor-pointer"
-                      >
-                        Mark as Closed
-                      </button>
+                    <div className="pt-4 border-t">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Type Reply Message:
+                      </label>
+                      <textarea
+                        value={replies[inquiry.id] || ""}
+                        onChange={(e) => setReplies({ ...replies, [inquiry.id]: e.target.value })}
+                        placeholder="Type your response to the customer here..."
+                        className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white mb-3 text-sm"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => handleSendReply(inquiry.id)}
+                          className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-semibold text-sm cursor-pointer"
+                        >
+                          Send Reply
+                        </button>
+                        <button
+                          onClick={() => handleUpdateStatus(inquiry.id, "CLOSED")}
+                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm cursor-pointer"
+                        >
+                          Mark as Closed
+                        </button>
+                      </div>
                     </div>
                   )}
 
                   {inquiry.status === "ANSWERED" && (
-                    <div className="flex justify-end pt-4 border-t">
-                      <button
-                        onClick={() => handleUpdateStatus(inquiry.id, "CLOSED")}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm cursor-pointer"
-                      >
-                        Close Inquiry
-                      </button>
+                    <div className="pt-4 border-t">
+                      <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4 text-sm text-gray-800">
+                        <strong className="block text-green-950 mb-1">Our Response:</strong>
+                        <p className="whitespace-pre-wrap font-medium">
+                          {inquiry.reply || "Marked as replied with no custom message."}
+                        </p>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => handleUpdateStatus(inquiry.id, "CLOSED")}
+                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm cursor-pointer"
+                        >
+                          Close Inquiry
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

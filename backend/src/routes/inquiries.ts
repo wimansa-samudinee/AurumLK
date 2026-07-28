@@ -65,7 +65,7 @@ router.post("/", authenticateToken, async (req: AuthRequest, res) => {
 
 router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const { status, message } = req.body;
+  const { status, message, reply } = req.body;
 
   const existing = await prisma.inquiry.findUnique({ where: { id } });
   if (!existing) {
@@ -83,6 +83,7 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   const updateData: any = {};
   if (status) updateData.status = status;
   if (message) updateData.message = message;
+  if (reply !== undefined) updateData.reply = reply;
 
   const inquiry = await prisma.inquiry.update({ where: { id }, data: updateData });
   return res.json(inquiry);
