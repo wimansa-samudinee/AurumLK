@@ -1,21 +1,21 @@
 import type { Inquiry, Offer, Branch, Center, User, UserRole } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
-const TOKEN_KEY = "aurumlk_token";
+const AUTH_STORAGE_KEY = "aurumlk_token";
 
 export function getToken() {
-  return typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+  return typeof window !== "undefined" ? localStorage.getItem(AUTH_STORAGE_KEY) : null;
 }
 
 export function setToken(token: string) {
   if (typeof window !== "undefined") {
-    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(AUTH_STORAGE_KEY, token);
   }
 }
 
 export function clearToken() {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   }
 }
 
