@@ -12,6 +12,7 @@ import adminRoutes from "./routes/admin.js";
 dotenv.config();
 
 const app = express();
+app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
 
